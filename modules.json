@@ -1,0 +1,14 @@
+[
+	"appnexusBidAdapter",
+	"sovrnBidAdapter",
+	"rhythmoneBidAdapter",
+	"criteoBidAdapter",
+	"pulsepointLiteBidAdapter",
+	"bidfluenceBidAdapter",
+	"districtmDMXBidAdapter",
+	"underdogmediaBidAdapter",
+	"gumgumBidAdapter",
+	"springserveBidAdapter",
+	"googleAnalyticsAdapter",
+	"roxotAnalyticsAdapter"
+]
