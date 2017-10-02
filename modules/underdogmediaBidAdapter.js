@@ -2,6 +2,7 @@ var bidfactory = require('../src/bidfactory.js');
 var bidmanager = require('../src/bidmanager.js');
 var adloader = require('../src/adloader.js');
 var utils = require('../src/utils.js');
+var adaptermanager = require('../src/adaptermanager');
 
 var UnderdogMediaAdapter = function UnderdogMediaAdapter() {
 
@@ -75,5 +76,7 @@ var UnderdogMediaAdapter = function UnderdogMediaAdapter() {
   };
 
 };
+
+adaptermanager.registerBidAdapter(new UnderdogMediaAdapter, 'underdogmedia');
 
 module.exports = UnderdogMediaAdapter;
