@@ -6,7 +6,7 @@ var adloader = require('src/adloader.js');
 var adaptermanager = require('src/adaptermanager');
 
 function VertozAdapter() {
-  const BASE_URI = '//banner.vrtzads.com/vzhbidder/bid?';
+  const BASE_URI = '//hb.vrtzads.com/vzhbidder/bid?';
   const BIDDER_NAME = 'vertoz';
   const QUERY_PARAM_KEY = 'q';
 
@@ -66,6 +66,6 @@ function VertozAdapter() {
   return { callBids: _callBids };
 }
 
-adaptermanager.registerBidAdapter(new VertozAdapter, 'vertoz');
+adaptermanager.registerBidAdapter(new VertozAdapter(), 'vertoz');
 
 module.exports = VertozAdapter;

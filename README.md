@@ -28,9 +28,11 @@ Working examples can be found in [the developer docs](http://prebid.org/dev-docs
     $ cd Prebid.js
     $ yarn install
 
-Prebid also supports the `yarn` npm client. This is an alternative to using `npm` for package management, though `npm` will continue to work as before.
+Prebid supports the `yarn` npm client. This is an alternative to using `npm` for package management, though `npm install` will continue to work as before.
 
 For more info, see [the Yarn documentation](https://yarnpkg.com).
+
+*Note:* You need to have `NodeJS` 4.x or greater installed.
 
 <a name="Build"></a>
 
@@ -46,8 +48,6 @@ This runs some code quality checks, starts a web server at `http://localhost:999
 + `./build/dev/prebid.js.map` - Source map for dev and debug
 + `./build/dist/prebid.js` - Minified production code
 + `./prebid.js_<version>.zip` - Distributable zip archive
-
-*Note:* You need to have `node.js` 4.x or greater installed to be able to run the `gulp build` commands.
 
 ### Build Optimization
 
@@ -190,7 +190,7 @@ If you are contributing code, you should [configure your editor](http://eslint.o
 
 ### Unit Testing with Karma
 
-        $ gulp test --watch
+        $ gulp test --watch --browsers=chrome
 
 This will run tests and keep the Karma test browser open. If your `prebid.js` file is sourced from the `./build/dev` directory you will also have sourcemaps available when using your browser's developer tools.
 
