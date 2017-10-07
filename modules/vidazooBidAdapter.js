@@ -56,7 +56,7 @@ function buildRequests(validBidRequests) {
 }
 
 function interpretResponse(serverResponse, request) {
-  if (!serverResponse || !serverResponse.data || serverResponse.adm) {
+  if (!serverResponse || !serverResponse.data || !serverResponse.adm) {
     return [];
   }
   const {bidId, width, height} = request.data;
