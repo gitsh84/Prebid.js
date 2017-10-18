@@ -2,8 +2,9 @@ import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
 
 const BIDDER_CODE = 'vidazoo';
-const BASE_URL = 'https://openrtb.cliipa.com';
-// const BASE_URL = 'http://localhost:8067';
+const CURRENCY = 'USD';
+const TTL_SECONDS = 60 * 5;
+const URL = '//display-ad-server-test.do.vidazoo.com';
 const INTERNAL_SYNC_TYPE = {
   IFRAME: 'iframe',
   IMAGE: 'img'
@@ -15,52 +16,50 @@ const EXTERNAL_SYNC_TYPE = {
 
 function isBidRequestValid(bid) {
   const params = bid.params || {};
-  return !!(params.cId && params.userId && params.dId);
+  return !!(params.cId && params.uId && params.dId);
 }
 
-function bidToRequests(bid, topWindowUrl) {
+function buildRequest(bid, topWindowUrl, size) {
   const {params, bidId} = bid;
-  const {bidFloor, cId, userId, dId} = params;
+  const {bidFloor, cId, uId, dId} = params;
 
-  const requests = [];
-  for (let i = 0, len = bid.sizes.length; i < len; i++) {
-    const size = bid.sizes[i];
-    const payload = {
+  return {
+    method: 'GET',
+    url: `${URL}/prebid/${uId}/${dId}`,
+    data: {
       width: size[0],
       height: size[1],
       url: topWindowUrl,
-      cache: false,
       cb: Date.now(),
       bidFloor: bidFloor,
-      bidId: bidId
-    };
-
-    requests.push({
-      method: 'GET',
-      url: `${BASE_URL}/api/prebid/${cId}/${userId}/${dId}`,
-      data: payload
-    });
+      bidId: bidId,
+      connectionId: cId
+    }
   }
-  return requests;
 }
 
 function buildRequests(validBidRequests) {
   const topWindowUrl = utils.getTopWindowUrl();
-
   const requests = [];
-  for (let i = 0, len = validBidRequests.length; i < len; i++) {
-    Array.prototype.push.apply(requests, bidToRequests(validBidRequests[i], topWindowUrl));
-  }
-
+  validBidRequests.forEach(validBidRequest => {
+    validBidRequest.sizes.forEach(size => {
+      const request = buildRequest(validBidRequest, topWindowUrl, size);
+      requests.push(request);
+    });
+  });
   return requests;
 }
 
 function interpretResponse(serverResponse, request) {
-  if (!serverResponse || !serverResponse.data || !serverResponse.adm) {
+  if (!serverResponse) {
     return [];
   }
+  const {creativeId, dealId, ad, price, exp} = serverResponse;
+  if (!ad || !price) {
+    return [];
+  }
+
   const {bidId, width, height} = request.data;
-  const {param3, param5, price} = serverResponse.data;
   try {
     return [{
       requestId: bidId,
@@ -68,13 +67,13 @@ function interpretResponse(serverResponse, request) {
       cpm: price,
       width: width,
       height: height,
-      creativeId: param3,
-      dealId: param5,
-      // currency: CURRENCY,
-      // netRevenue: true,
-      // ttl: TIME_TO_LIVE,
+      creativeId: creativeId,
+      dealId: dealId,
+      currency: CURRENCY,
+      netRevenue: true,
+      ttl: exp || TTL_SECONDS,
       // referrer: REFERER,
-      ad: serverResponse.adm
+      ad: ad
     }];
   } catch (e) {
     return [];
@@ -84,13 +83,9 @@ function interpretResponse(serverResponse, request) {
 function getUserSyncs(syncOptions, responses) {
   const {iframeEnabled, pixelEnabled} = syncOptions;
   const syncs = [];
-  for (let i = 0, leni = responses.length; i < leni; i++) {
-    const response = responses[i];
-    if (!response.data || !response.data.cookies || !response.data.cookies.length) {
-      continue;
-    }
-    for (let j = 0, lenj = response.data.cookies.length; j < lenj; j++) {
-      const cookie = response.data.cookies[j];
+  responses.forEach(response => {
+    const cookies = response ? response.cookies || [] : [];
+    cookies.forEach(cookie => {
       switch (cookie.type) {
         case INTERNAL_SYNC_TYPE.IFRAME:
           iframeEnabled && (syncs.push({
@@ -105,18 +100,17 @@ function getUserSyncs(syncOptions, responses) {
           }));
           break;
       }
-    }
-  }
+    });
+  });
   return syncs;
 }
 
 export const spec = {
   code: BIDDER_CODE,
-  // aliases: ['ex'], // short code
-  isBidRequestValid: isBidRequestValid,
-  buildRequests: buildRequests,
-  interpretResponse: interpretResponse,
-  getUserSyncs: getUserSyncs
+  isBidRequestValid,
+  buildRequests,
+  interpretResponse,
+  getUserSyncs
 };
 
 registerBidder(spec);
