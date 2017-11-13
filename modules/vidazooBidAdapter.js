@@ -4,7 +4,7 @@ import {registerBidder} from 'src/adapters/bidderFactory';
 const BIDDER_CODE = 'vidazoo';
 const CURRENCY = 'USD';
 const TTL_SECONDS = 60 * 5;
-const URL = '//display-ad-server-test.do.vidazoo.com';
+const URL = '//display-ad-server.vidazoo.com';
 const INTERNAL_SYNC_TYPE = {
   IFRAME: 'iframe',
   IMAGE: 'img'
