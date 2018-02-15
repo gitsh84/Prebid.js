@@ -11,5 +11,8 @@
 	"indexExchangeBidAdapter",
 	"googleAnalyticsAdapter",
 	"sonobiBidAdapter",
-	"aolBidAdapter"
+	"aolBidAdapter",
+	"gumgumBidAdapter",
+	"criteoBidAdapter"
 ]
+// BUILD: $ gulp build --modules=modules.json (remove this line when building)
