@@ -1,10 +1,10 @@
 import * as utils from 'src/utils';
 import {registerBidder} from 'src/adapters/bidderFactory';
-
+import {BANNER} from 'src/mediaTypes';
+export const URL = '//prebid.cliipa.com';
 const BIDDER_CODE = 'vidazoo';
 const CURRENCY = 'USD';
 const TTL_SECONDS = 60 * 5;
-const URL = '//display-ad-server.vidazoo.com';
 const INTERNAL_SYNC_TYPE = {
   IFRAME: 'iframe',
   IMAGE: 'img'
@@ -16,24 +16,26 @@ const EXTERNAL_SYNC_TYPE = {
 
 function isBidRequestValid(bid) {
   const params = bid.params || {};
-  return !!(params.cId && params.uId && params.dId);
+  return !!(params.cId && params.pId);
 }
 
 function buildRequest(bid, topWindowUrl, size) {
   const {params, bidId} = bid;
-  const {bidFloor, cId, uId, dId} = params;
+  const {bidFloor, cId, pId} = params;
+  // Prebid's util function returns AppNexus style sizes (i.e. 300x250)
+  const [width, height] = size.split('x');
 
   return {
     method: 'GET',
-    url: `${URL}/prebid/${uId}/${dId}`,
+    url: `${URL}/prebid/${cId}`,
     data: {
-      width: size[0],
-      height: size[1],
       url: topWindowUrl,
       cb: Date.now(),
       bidFloor: bidFloor,
       bidId: bidId,
-      connectionId: cId
+      publisherId: pId,
+      width,
+      height
     }
   }
 }
@@ -42,7 +44,8 @@ function buildRequests(validBidRequests) {
   const topWindowUrl = utils.getTopWindowUrl();
   const requests = [];
   validBidRequests.forEach(validBidRequest => {
-    validBidRequest.sizes.forEach(size => {
+    const sizes = utils.parseSizesInput(validBidRequest.sizes);
+    sizes.forEach(size => {
       const request = buildRequest(validBidRequest, topWindowUrl, size);
       requests.push(request);
     });
@@ -54,25 +57,21 @@ function interpretResponse(serverResponse, request) {
   if (!serverResponse) {
     return [];
   }
-  const {creativeId, dealId, ad, price, exp} = serverResponse;
+  const {creativeId, ad, price, exp} = serverResponse;
   if (!ad || !price) {
     return [];
   }
-
   const {bidId, width, height} = request.data;
   try {
     return [{
       requestId: bidId,
-      bidderCode: BIDDER_CODE,
       cpm: price,
       width: width,
       height: height,
       creativeId: creativeId,
-      dealId: dealId,
       currency: CURRENCY,
       netRevenue: true,
       ttl: exp || TTL_SECONDS,
-      // referrer: REFERER,
       ad: ad
     }];
   } catch (e) {
@@ -82,31 +81,44 @@ function interpretResponse(serverResponse, request) {
 
 function getUserSyncs(syncOptions, responses) {
   const {iframeEnabled, pixelEnabled} = syncOptions;
-  const syncs = [];
-  responses.forEach(response => {
-    const cookies = response ? response.cookies || [] : [];
-    cookies.forEach(cookie => {
-      switch (cookie.type) {
-        case INTERNAL_SYNC_TYPE.IFRAME:
-          iframeEnabled && (syncs.push({
-            type: EXTERNAL_SYNC_TYPE.IFRAME,
-            url: cookie.src
-          }));
-          break;
-        case INTERNAL_SYNC_TYPE.IMAGE:
-          pixelEnabled && (syncs.push({
-            type: EXTERNAL_SYNC_TYPE.IMAGE,
-            url: cookie.src
-          }));
-          break;
-      }
+
+  if (iframeEnabled) {
+    return [{
+      type: 'iframe',
+      url: '//static.cliipa.com/basev/sync/user_sync.html'
+    }];
+  }
+
+  if (pixelEnabled) {
+    const lookup = {};
+    const syncs = [];
+    responses.forEach(response => {
+      const {body} = response;
+      const cookies = body ? body.cookies || [] : [];
+      cookies.forEach(cookie => {
+        switch (cookie.type) {
+          case INTERNAL_SYNC_TYPE.IFRAME:
+            break;
+          case INTERNAL_SYNC_TYPE.IMAGE:
+            if (pixelEnabled && !lookup[cookie.src]) {
+              syncs.push({
+                type: EXTERNAL_SYNC_TYPE.IMAGE,
+                url: cookie.src
+              });
+            }
+            break;
+        }
+      });
     });
-  });
-  return syncs;
+    return syncs;
+  }
+
+  return [];
 }
 
 export const spec = {
   code: BIDDER_CODE,
+  supportedMediaTypes: [BANNER],
   isBidRequestValid,
   buildRequests,
   interpretResponse,
