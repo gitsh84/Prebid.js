@@ -85,7 +85,7 @@ function getUserSyncs(syncOptions, responses) {
   if (iframeEnabled) {
     return [{
       type: 'iframe',
-      url: '//static.cliipa.com/basev/sync/user_sync.html'
+      url: '//static.nininin.com/basev/sync/user_sync.html'
     }];
   }
 
