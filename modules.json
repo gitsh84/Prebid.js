@@ -13,6 +13,9 @@
 	"sonobiBidAdapter",
 	"aolBidAdapter",
 	"gumgumBidAdapter",
-	"criteoBidAdapter"
+	"criteoBidAdapter",
+	"openxBidAdapter",
+	"tripleliftBidAdapter",
+	"audienceNetworkBidAdapter"
 ]
 // BUILD: $ gulp build --modules=modules.json (remove this line when building)
