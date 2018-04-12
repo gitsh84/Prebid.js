@@ -1,21 +1,10 @@
 [
-	"appnexusBidAdapter",
 	"appnexusAstBidAdapter",
 	"sovrnBidAdapter",
 	"rhythmoneBidAdapter",
 	"pulsepointLiteBidAdapter",
-	"bidfluenceBidAdapter",
 	"districtmDMXBidAdapter",
-	"underdogmediaBidAdapter",
 	"vidazooBidAdapter",
-	"indexExchangeBidAdapter",
-	"googleAnalyticsAdapter",
 	"sonobiBidAdapter",
-	"aolBidAdapter",
-	"gumgumBidAdapter",
-	"criteoBidAdapter",
-	"openxBidAdapter",
-	"tripleliftBidAdapter",
-	"audienceNetworkBidAdapter"
+	"aolBidAdapter"
 ]
-// BUILD: $ gulp build --modules=modules.json (remove this line when building)
