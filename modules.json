@@ -6,5 +6,6 @@
 	"districtmDMXBidAdapter",
 	"vidazooBidAdapter",
 	"sonobiBidAdapter",
-	"aolBidAdapter"
+	"aolBidAdapter",
+	"openxBidAdapter"
 ]
