@@ -7,5 +7,6 @@
 	"vidazooBidAdapter",
 	"sonobiBidAdapter",
 	"aolBidAdapter",
-	"openxBidAdapter"
+	"openxBidAdapter",
+	"indexExchangeBidAdapter"
 ]
