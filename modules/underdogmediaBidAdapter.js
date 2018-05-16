@@ -1,81 +1,117 @@
-var bidfactory = require('src/bidfactory.js');
-var bidmanager = require('src/bidmanager.js');
-var adloader = require('src/adloader.js');
-var utils = require('src/utils.js');
+import * as utils from 'src/utils';
+import { config } from 'src/config';
+import { registerBidder } from 'src/adapters/bidderFactory';
+const BIDDER_CODE = 'underdogmedia';
+const UDM_ADAPTER_VERSION = '1.0';
 
-var adaptermanager = require('src/adaptermanager');
+export const spec = {
+  code: BIDDER_CODE,
+  bidParams: [],
 
-var UnderdogMediaAdapter = function UnderdogMediaAdapter() {
-    utils.logMessage('Initializing UDM Adapter Version 0.26-0.34.7 updated 04/09/18');
-    var getJsStaticUrl = window.location.protocol + '//bid.underdog.media/udm_header_lib.js';
-    $$PREBID_GLOBAL$$.handleUnderdogMediaCB = function(){};
-    function _callBids(params) {
-        if (typeof window.udm_header_lib === 'undefined') {
-            adloader.loadScript(getJsStaticUrl, function() {
-                bid(params);
-            });
-        } else {
-            bid(params);
-        }
-    }
+  isBidRequestValid: function (bid) {
+    return !!((bid.params && bid.params.siteId) && (bid.sizes && bid.sizes.length > 0));
+  },
 
-    function bid(params) {
-        var bids = params.bids;
-        var mapped_bids = [];
-        for (var i = 0; i < bids.length; i++) {
-            var bidRequest = bids[i];
-            var callback = bidResponseCallback(bidRequest);
-            mapped_bids.push({
-                sizes: bidRequest.sizes,
-                siteId: bidRequest.params.siteId,
-                bidfloor: bidRequest.params.bidfloor,
-                placementCode: bidRequest.placementCode,
-                divId: bidRequest.params.divId,
-                subId: bidRequest.params.subId,
-                callback: callback
-            });
-        }
-        var udmBidRequest = new window.udm_header_lib.BidRequestArray(mapped_bids);
-        udmBidRequest.send();
-    }
+  buildRequests: function (validBidRequests) {
+    var sizes = [];
+    var siteId = 0;
 
-    function bidResponseCallback(bid) {
-        return function(bidResponse) {
-            bidResponseAvailable(bid, bidResponse);
-        };
-    }
-
-    function bidResponseAvailable(bidRequest, bidResponse) {
-        if (bidResponse.bids.length > 0) {
-            for (var i = 0; i < bidResponse.bids.length; i++) {
-                var udm_bid = bidResponse.bids[i];
-                var bid = bidfactory.createBid(1);
-                bid.bidderCode = bidRequest.bidder;
-                bid.cpm = udm_bid.cpm;
-                bid.width = udm_bid.width;
-                bid.height = udm_bid.height;
-
-                if (udm_bid.ad_url !== undefined) {
-                    bid.adUrl = udm_bid.ad_url;
-                } else if (udm_bid.ad_html !== undefined) {
-                    bid.ad = udm_bid.ad_html;
-                } else {
-                    utils.logMessage('Underdogmedia bid is lacking both ad_url and ad_html, skipping bid');
-                    continue;
-                }
-
-                bidmanager.addBidResponse(bidRequest.placementCode, bid);
-            }
-        } else {
-            var nobid = bidfactory.createBid(2);
-            nobid.bidderCode = bidRequest.bidder;
-            bidmanager.addBidResponse(bidRequest.placementCode, nobid);
-        }
-    }
+    validBidRequests.forEach(bidParam => {
+      sizes = utils.flatten(sizes, utils.parseSizesInput(bidParam.sizes));
+      siteId = bidParam.params.siteId;
+    });
 
     return {
-        callBids: _callBids
+      method: 'GET',
+      url: `${window.location.protocol}//udmserve.net/udm/img.fetch`,
+      data: `tid=1;dt=10;sid=${siteId};sizes=${sizes.join(',')}`,
+      bidParams: validBidRequests
     };
+  },
+
+  interpretResponse: function (serverResponse, bidRequest) {
+    const bidResponses = [];
+    bidRequest.bidParams.forEach(bidParam => {
+      serverResponse.body.mids.forEach(mid => {
+        if (mid.useCount > 0) {
+          return;
+        }
+
+        if (!mid.useCount) {
+          mid.useCount = 0;
+        }
+
+        var size_not_found = true;
+        utils.parseSizesInput(bidParam.sizes).forEach(size => {
+          if (size === mid.width + 'x' + mid.height) {
+            size_not_found = false;
+          }
+        });
+
+        if (size_not_found) {
+          return;
+        }
+
+        const bidResponse = {
+          requestId: bidParam.bidId,
+          bidderCode: spec.code,
+          cpm: parseFloat(mid.cpm),
+          width: mid.width,
+          height: mid.height,
+          ad: mid.ad_code_html,
+          creativeId: mid.mid,
+          currency: 'USD',
+          netRevenue: false,
+          ttl: config.getConfig('_bidderTimeout'),
+        };
+
+        if (bidResponse.cpm <= 0) {
+          return;
+        }
+        if (bidResponse.ad.length <= 0) {
+          return;
+        }
+
+        mid.useCount++;
+
+        bidResponse.ad += makeNotification(bidResponse, mid, bidParam);
+
+        bidResponses.push(bidResponse);
+      });
+    });
+
+    return bidResponses;
+  },
 };
-adaptermanager.registerBidAdapter(new UnderdogMediaAdapter(), 'underdogmedia');
-module.exports = UnderdogMediaAdapter;
+
+function makeNotification (bid, mid, bidParam) {
+  var url = mid.notification_url;
+
+  url += UDM_ADAPTER_VERSION;
+  url += ';cb=' + Math.random();
+  url += ';qqq=' + (1 / bid.cpm);
+  url += ';hbt=' + config.getConfig('_bidderTimeout');
+  url += ';style=adapter';
+  url += ';vis=' + encodeURIComponent(document.visibilityState);
+
+  url += ';traffic_info=' + encodeURIComponent(JSON.stringify(getUrlVars()));
+  if (bidParam.params.subId) {
+    url += ';subid=' + encodeURIComponent(bidParam.params.subId);
+  }
+  return '<script async src="' + url + '"></script>';
+}
+
+function getUrlVars() {
+  var vars = {};
+  var hash;
+  var hashes = window.location.href.slice(window.location.href.indexOf('?') + 1).split('&');
+  for (var i = 0; i < hashes.length; i++) {
+    hash = hashes[i].split('=');
+    if (hash[0].match(/^utm_/)) {
+      vars[hash[0]] = hash[1].substr(0, 150);
+    }
+  }
+  return vars;
+}
+
+registerBidder(spec);
