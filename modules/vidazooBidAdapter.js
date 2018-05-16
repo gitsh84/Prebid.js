@@ -39,7 +39,7 @@ function buildRequest(bid, topWindowUrl, size) {
     }
   }
 
-  Object.entries(ext).forEach(entry => dto.data['ext.' + entry[0]] = entry[1]);
+  if (ext) Object.entries(ext).forEach(entry => dto.data['ext.' + entry[0]] = entry[1]);
 
   return dto;
 }
