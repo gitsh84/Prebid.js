@@ -1,12 +1,16 @@
 [
-	"appnexusAstBidAdapter",
+	"consentManagement",
+	"appnexusBidAdapter",
 	"sovrnBidAdapter",
 	"rhythmoneBidAdapter",
-	"pulsepointLiteBidAdapter",
-	"districtmDMXBidAdapter",
+	"pulsepointBidAdapter",
 	"vidazooBidAdapter",
 	"sonobiBidAdapter",
 	"aolBidAdapter",
 	"openxBidAdapter",
-	"indexExchangeBidAdapter"
+	"ixBidAdapter",
+	"sharethroughBidAdapter",
+	"rubiconBidAdapter",
+	"yieldmoBidAdapter",
+	"audienceNetworkBidAdapter"
 ]
