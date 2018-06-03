@@ -12,5 +12,8 @@
 	"sharethroughBidAdapter",
 	"rubiconBidAdapter",
 	"yieldmoBidAdapter",
-	"audienceNetworkBidAdapter"
+	"audienceNetworkBidAdapter",
+	"criteoBidAdapter",
+	"pubmaticBidAdapter",
+	"medianetBidAdapeter"
 ]
