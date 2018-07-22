@@ -15,5 +15,6 @@
 	"audienceNetworkBidAdapter",
 	"criteoBidAdapter",
 	"pubmaticBidAdapter",
-	"medianetBidAdapter"
+	"medianetBidAdapter",
+	"underdogmediaBidAdapter"
 ]
