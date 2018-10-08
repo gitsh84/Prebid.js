@@ -35,10 +35,34 @@ var UnderdogMediaAdapter = function UnderdogMediaAdapter() {
       }
     }
 
-    if (!gdpr.gdprApplies || gdpr.consentGiven) {
-      if (typeof window.udm_header_lib === 'undefined') {
-        adloader.loadScript(getJsStaticUrl, function () {
-          bid(bidderRequest);
+
+    if (!data.gdprApplies || data.consentGiven) {
+      return {
+        method: 'GET',
+        url: `${window.location.protocol}//udmserve.net/udm/img.fetch`,
+        data: data,
+        bidParams: validBidRequests
+      };
+    }
+  },
+
+  interpretResponse: function (serverResponse, bidRequest) {
+    const bidResponses = [];
+    bidRequest.bidParams.forEach(bidParam => {
+      serverResponse.body.mids.forEach(mid => {
+        if (mid.useCount > 0) {
+          return;
+        }
+
+        if (!mid.useCount) {
+          mid.useCount = 0;
+        }
+
+        var sizeNotFound = true;
+        utils.parseSizesInput(bidParam.sizes).forEach(size => {
+          if (size === mid.width + 'x' + mid.height) {
+            sizeNotFound = false;
+          }
         });
       } else {
         bid(bidderRequest);
@@ -52,26 +76,35 @@ var UnderdogMediaAdapter = function UnderdogMediaAdapter() {
     }
   }
 
-  function bid(bidderRequest) {
-    responsesProcessed[bidderRequest.auctionId] = 0;
-    var bids = bidderRequest.bids;
-    var mapped_bids = [];
-    for (var i = 0; i < bids.length; i++) {
-      var bidRequest = bids[i];
-      var callback = bidResponseCallback(bidRequest, bids.length);
-      mapped_bids.push({
-        auctionId: bidRequest.auctionId,
-        auctionStart: bidderRequest.auctionStart,
-        auctionTimeout: bidderRequest.timeout,
-        bidder: bidRequest.bidder,
-        sizes: bidRequest.sizes,
-        siteId: bidRequest.params.siteId,
-        bidfloor: bidRequest.params.bidfloor,
-        adunitcode: bidRequest.adUnitCode,
-        placementCode: bidRequest.adUnitCode,
-        divId: bidRequest.params.divId,
-        subId: bidRequest.params.subId,
-        callback: callback
+        if (sizeNotFound) {
+          return;
+        }
+
+        const bidResponse = {
+          requestId: bidParam.bidId,
+          bidderCode: spec.code,
+          cpm: parseFloat(mid.cpm),
+          width: mid.width,
+          height: mid.height,
+          ad: mid.ad_code_html,
+          creativeId: mid.mid,
+          currency: 'USD',
+          netRevenue: false,
+          ttl: config.getConfig('_bidderTimeout'),
+        };
+
+        if (bidResponse.cpm <= 0) {
+          return;
+        }
+        if (bidResponse.ad.length <= 0) {
+          return;
+        }
+
+        mid.useCount++;
+
+        bidResponse.ad += makeNotification(bidResponse, mid, bidParam);
+
+        bidResponses.push(bidResponse);
       });
     }
     var udmBidRequest = new window.udm_header_lib.BidRequestArray(mapped_bids);
