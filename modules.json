@@ -1,20 +1,13 @@
 [
 	"consentManagement",
 	"appnexusBidAdapter",
-	"sovrnBidAdapter",
 	"rhythmoneBidAdapter",
-	"pulsepointBidAdapter",
 	"vidazooBidAdapter",
 	"sonobiBidAdapter",
-	"aolBidAdapter",
 	"openxBidAdapter",
 	"ixBidAdapter",
-	"sharethroughBidAdapter",
-	"rubiconBidAdapter",
-	"yieldmoBidAdapter",
-	"audienceNetworkBidAdapter",
 	"criteoBidAdapter",
-	"pubmaticBidAdapter",
 	"medianetBidAdapter",
-	"underdogmediaBidAdapter"
+	"underdogmediaBidAdapter",
+	"districtmDMXBidAdapter"
 ]
